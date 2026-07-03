@@ -1,0 +1,63 @@
+# 全局配置
+llm:
+  temperature: 0.0
+  max_tokens: 2048
+  timeout: 30
+
+router:
+  # 意图路由的 few-shot 示例数
+  few_shot_examples: 3
+  # 路由类别
+  categories:
+    - text_to_sql    # 结构化数据查询
+    - traditional_rag # 文档知识查询
+    - graph_rag       # 关系推理查询
+    - wiki_rag        # 外部通用知识
+    - sag             # SQL+关联扩展
+    - hybrid          # 混合查询
+
+cache:
+  # 语义去重相似度阈值
+  similarity_threshold: 0.92
+  # 缓存 TTL (秒)
+  ttl: 3600
+
+text_to_sql:
+  # schema 检索 top-k 表
+  schema_top_k: 5
+  # 自纠错最大重试次数
+  max_retries: 3
+
+traditional_rag:
+  chunk_size: 400
+  chunk_overlap: 50
+  retrieve_top_k: 10
+  rerank_top_k: 3
+
+graph_rag:
+  # 子图最大跳数
+  max_hops: 2
+  # 子图最大节点数
+  max_nodes: 30
+
+wiki_rag:
+  # 检索条目数
+  max_results: 3
+  # 每条目摘要字符数
+  summary_chars: 1000
+
+sag:
+  # 超图扩展跳数
+  expand_hops: 2
+  # 扩展实体上限
+  max_expand_entities: 15
+
+orchestrator:
+  # 熔断器: 连续失败次数
+  circuit_failure_threshold: 5
+  # 熔断冷却时间 (秒)
+  circuit_cooldown: 30
+  # 重试次数
+  max_retries: 3
+  # 退避基数 (秒)
+  backoff_base: 2

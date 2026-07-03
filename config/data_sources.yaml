@@ -1,0 +1,42 @@
+# 数据源配置 (MCP 风格: 配置驱动, 新增数据源零代码改动)
+# 每个数据源注册为一个 connector, 启动时扫描加载
+
+sources:
+  - name: sales_db
+    type: sqlite
+    description: 销售数据库,包含订单、客户、产品信息
+    config:
+      db_path: data/sample_db.sqlite
+    tables:
+      - orders
+      - customers
+      - products
+
+  - name: hr_db
+    type: sqlite
+    description: 人力资源数据库,包含员工、部门、薪资信息
+    config:
+      db_path: data/sample_db.sqlite
+    tables:
+      - employees
+      - departments
+      - salaries
+
+  - name: company_docs
+    type: documents
+    description: 公司规章制度、报销流程、业务资料等文档
+    config:
+      doc_dir: data/documents
+      collection: company_docs
+
+  - name: knowledge_graph
+    type: graph
+    description: 公司业务知识图谱(实体与关系)
+    config:
+      graph_path: data/graph.pkl
+
+  - name: wiki
+    type: wiki
+    description: Wikipedia 外部通用知识
+    config:
+      language: zh

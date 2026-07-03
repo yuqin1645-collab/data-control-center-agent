@@ -1,0 +1,36 @@
+# LLM
+openai>=1.12.0
+tiktoken>=0.6.0
+
+# 向量与检索
+chromadb>=0.4.22
+sentence-transformers>=2.6.1
+numpy>=1.24.0
+
+# 图
+networkx>=3.2
+
+# 数据库
+sqlalchemy>=2.0.25
+sqlparse>=0.4.4
+
+# Wiki
+wikipedia>=1.4.0
+
+# 缓存
+redis>=5.0.0
+
+# 配置
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# 前端
+streamlit>=1.31.0
+pandas>=2.2.0
+matplotlib>=3.8.0
+
+# 文档解析(传统 RAG)
+pypdf>=4.0.0
+
+# 评估
+scikit-learn>=1.4.0
