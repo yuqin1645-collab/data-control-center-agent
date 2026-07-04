@@ -97,8 +97,8 @@ class DataControlCenterAgent:
         """
         t0 = time.time()
 
-        # 1. 缓存命中检查
-        cached, hit = self.cache.get(query)
+        # 1. 缓存命中检查 (按 user scope 隔离, 避免跨权限命中)
+        cached, hit = self.cache.get(query, user=user)
         if hit:
             return {
                 "answer": cached.get("answer", ""),
@@ -216,7 +216,7 @@ class DataControlCenterAgent:
             "iterations": iterations,
         }
 
-        # 写缓存
+        # 写缓存 (按 user scope 隔离, 避免污染其他权限的缓存)
         if answer and "无法" not in answer[:10]:
             self.cache.set(query, {
                 "answer": answer,
@@ -225,7 +225,7 @@ class DataControlCenterAgent:
                     {"path": r["path"], "query": r["query"], "result": r["result"]}
                     for r in path_results
                 ],
-            })
+            }, user=user)
 
         return result
 

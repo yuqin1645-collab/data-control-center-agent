@@ -20,6 +20,8 @@ MAX_MESSAGES = 20
 RECENT_KEEP = 6
 # 单条消息最大字符数 (超过截断)
 MAX_MSG_CHARS = 2000
+# 摘要 prompt 最多容纳多少条旧消息 (防止超长会话撑爆摘要 LLM 调用的 token)
+MAX_SUMMARIZE_MSGS = 30
 
 
 class ContextCompactor:
@@ -49,6 +51,11 @@ class ContextCompactor:
         # 分割: 旧的要压缩, 最近的保留
         old_messages = messages[:-RECENT_KEEP]
         recent_messages = messages[-RECENT_KEEP:]
+
+        # 防止超长会话撑爆摘要 prompt: 只摘最近 MAX_SUMMARIZE_MSGS 条旧消息,
+        # 更早的丢弃 (摘要本身已是历史压缩, 丢最远的损失最小).
+        if len(old_messages) > MAX_SUMMARIZE_MSGS:
+            old_messages = old_messages[-MAX_SUMMARIZE_MSGS:]
 
         # 先做 snipCompact: 截断超长消息
         old_snipped = [self._snip(m) for m in old_messages]

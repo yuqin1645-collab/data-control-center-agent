@@ -41,8 +41,10 @@ async def submit_query(req: QueryRequest, user: dict = Depends(get_current_user)
     if cid:
         conv = get_conversation(cid, user["id"])
         if conv:
+            # 传完整历史, 由 ContextCompactor 在超过 MAX_MESSAGES 条时自动摘要压缩.
+            # 之前只取 msgs[-6:], 而 compact 阈值是 20, 导致 autoCompact 永不触发.
             msgs = conv.get("messages", [])
-            history = [{"role": m["role"], "content": m["content"]} for m in msgs[-6:]]
+            history = [{"role": m["role"], "content": m["content"]} for m in msgs]
         else:
             cid = None
 
@@ -120,8 +122,10 @@ async def stream_query(req: QueryRequest, user: dict = Depends(get_current_user)
     if cid:
         conv = get_conversation(cid, user["id"])
         if conv:
+            # 传完整历史, 由 ContextCompactor 在超过 MAX_MESSAGES 条时自动摘要压缩.
+            # 之前只取 msgs[-6:], 而 compact 阈值是 20, 导致 autoCompact 永不触发.
             msgs = conv.get("messages", [])
-            history = [{"role": m["role"], "content": m["content"]} for m in msgs[-6:]]
+            history = [{"role": m["role"], "content": m["content"]} for m in msgs]
         else:
             cid = None
 
