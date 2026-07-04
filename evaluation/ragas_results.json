@@ -1,0 +1,49 @@
+{
+  "individual_results": [
+    {
+      "path": "text_to_sql",
+      "question": "销售额排名前5的产品",
+      "answer": "销售额排名前5的产品及对应销售额如下：  \n1. 产品16：829,804.26  \n2. 产品22：820,214.46  \n3. 产品4：780,155.37  \n4. 产品7：765,324.11  \n5. 产品11：726,760.04",
+      "context": "SQL: SELECT p.product_name, SUM(o.amount) AS total_sales\nFROM products p\nJOIN orders o ON p.product_id = o.product_id\nGROUP BY p.product_id, p.product_name\nORDER BY total_sales DESC\nLIMIT 5\n命中表: ['sales_db.products', 'sales_db.customers', 'hr_db.departments', 'sales_db.orders', 'hr_db.employees']\n列: ['product_name', 'total_sales']\n行数: 5\n数据(前50行): [[\"产品16\", 829804.26], [\"产品22\", 820214.46], [\"产品4\", 780155.3700000001], [\"产品7\", 765324.11], [\"产品11\", 726760.04]]",
+      "elapsed": 5.59,
+      "route": "text_to_sql",
+      "cached": false
+    },
+    {
+      "path": "traditional_rag",
+      "question": "员工报销流程是什么",
+      "answer": "员工报销流程如下：\n\n1. 员工填写报销单，并附上发票原件；  \n2. 直属主管审核并签字；  \n3. 部门经理审批；若报销金额超过5000元，需由总监审批；  \n4. 财务部复核；  \n5. 款项打至员工工资卡，一般5个工作日内到账。  \n\n该流程适用于全体员工的日常差旅、办公、招待等费用报销。",
+      "context": "# 公司报销流程\n\n## 适用范围\n本流程适用于全体员工日常差旅、办公、招待等费用的报销。\n\n## 报销步骤\n1. 员工填写报销单, 附上发票原件\n2. 直属主管审核签字\n3. 部门经理审批 (金额超过 5000 元需总监审批)\n4. 财务部复核\n5. 打款到工资卡 (一般 5 个工作日内到账)\n\n## 退货处理流程\n1. 客户提出退货申请\n2. 客服部核实退货原因, 判断是否符合退货政策\n3. 符合条件的, 生成退货单\n4. 仓储部收货验收\n5. 财务退款\n\n## 华东区退货率政策\n华东区本月退货率若超过 8%, 需提交退货原因分析报告, 由销售经理和客服经理共同签字。\n---\n# 产品线介绍\n\n## 电子类\nP001 智能音箱, 售价 499\nP002 蓝牙耳机, 售价 299\nP003 平板电脑, 售价 2599\n\n## 服装类\nP010 男士夹克, 售价 399\nP011 女士连衣裙, 售价 459\n\n## 退货政策\n电子类产品 7 天无理由退货, 服装类 15 天无理由退货, 食品类不支持退货。\n---\n# 员工手册\n\n## 考勤制度\n工作日 9:00-18:00, 弹性 3",
+      "elapsed": 3.67,
+      "route": "traditional_rag",
+      "cached": false
+    },
+    {
+      "path": "graph_rag",
+      "question": "张三和李四有什么关系",
+      "answer": "张三和李四存在协作关系。李四隶属于客服部，与张三协作。",
+      "context": "种子实体: ['张三', '李四']\n关联子图:\n客服部 --[隶属]--> 李四\n李四 --[协作]--> 张三",
+      "elapsed": 3.28,
+      "route": "graph_rag",
+      "cached": false
+    },
+    {
+      "path": "wiki_rag",
+      "question": "什么是机器学习",
+      "answer": "根据现有数据无法完全回答。",
+      "context": "(Wiki 搜索失败: Expecting value: line 1 column 1 (char 0))",
+      "elapsed": 8.44,
+      "route": "wiki_rag",
+      "cached": false
+    },
+    {
+      "path": "sag",
+      "question": "客户C001买了什么产品以及相关产品",
+      "answer": "客户C001购买了以下7款产品，及其所属类别和价格：\n\n- 产品3（办公类，¥2069.19）  \n- 产品1（服装类，¥3976.65）  \n- 产品24（服装类，¥4123.08）  \n- 产品28（办公类，¥3667.44）  \n- 产品5（电子类，¥1781.77）  \n- 产品10（家居类，¥3269.19）  \n- 产品27（办公类，¥3844.59）  \n\n“相关产品”在当前上下文中未定义（如未提供协同过滤、品类关联规则或共购关系等扩展信息），超图扩展亦未返回任何相关实体。因此，**根据现有数据无法完全回答“相关产品”部分**。",
+      "context": "SQL: SELECT p.product_name, p.category, p.price\nFROM orders o\nJOIN products p ON o.product_id = p.product_id\nWHERE o.customer_id = 'C001';\n基础结果(7行): [[\"产品3\", \"办公\", 2069.19], [\"产品1\", \"服装\", 3976.65], [\"产品24\", \"服装\", 4123.08], [\"产品28\", \"办公\", 3667.44], [\"产品5\", \"电子\", 1781.77], [\"产品10\", \"家居\", 3269.19], [\"产品27\", \"办公\", 3844.59]]\n\n--- 超图扩展 ---\n种子实体: [('category', '办公'), ('category', '家居'), ('product', '产品24'), ('product', '产品1'), ('category', '服装'), ('product', '产品27'), ('product', '产品5'), ('product', '产品",
+      "elapsed": 6.13,
+      "route": "sag",
+      "cached": false
+    }
+  ]
+}

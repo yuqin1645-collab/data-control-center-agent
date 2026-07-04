@@ -107,25 +107,32 @@ class Orchestrator:
             self.breakers[path] = CircuitBreaker(self.threshold, self.cooldown)
         return self.breakers[path]
 
-    def execute_path(self, path: str, query: str) -> dict:
+    def execute_path(self, path: str, query: str, user: dict = None) -> dict:
         """执行单条路径. 返回 {"path":..., "query":..., "result":..., "error":...}."""
+        import time as _time
+        t0 = _time.time()
         breaker = self._breaker(path)
         if not breaker.allow():
             return {"path": path, "query": query, "result": None, "error": "circuit_open"}
         try:
+            t_retriever = _time.time()
             retriever = self._get_retriever(path)
+            print(f"[Orch] _get_retriever 耗时 {round(_time.time()-t_retriever,2)}s")
 
             def _do():
-                return retriever.retrieve(query)
+                return retriever.retrieve(query, user=user)
 
+            t_retry = _time.time()
             result = with_retry(_do, self.max_retries, self.backoff_base)
+            print(f"[Orch] with_retry (含retrieve) 耗时 {round(_time.time()-t_retry,2)}s")
             breaker.record_success()
             return {"path": path, "query": query, "result": result, "error": None}
         except Exception as e:
             breaker.record_failure()
+            print(f"[Orch] execute_path 异常: {e}")
             return {"path": path, "query": query, "result": None, "error": str(e)}
 
-    def run(self, route_result: dict, query: str) -> List[dict]:
+    def run(self, route_result: dict, query: str, user: dict = None) -> List[dict]:
         """根据路由结果执行. 返回各路径结果列表."""
         label = route_result["label"]
         if label == "hybrid":
@@ -133,6 +140,6 @@ class Orchestrator:
             if not subqueries:
                 # 路由没拆出来, 降级全跑
                 subqueries = [{"q": query, "path": p} for p in ["text_to_sql", "traditional_rag"]]
-            results = [self.execute_path(sq["path"], sq["q"]) for sq in subqueries]
+            results = [self.execute_path(sq["path"], sq["q"], user=user) for sq in subqueries]
             return results
-        return [self.execute_path(label, query)]
+        return [self.execute_path(label, query, user=user)]

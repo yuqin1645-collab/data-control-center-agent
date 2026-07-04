@@ -6,9 +6,10 @@ class BaseRetriever(ABC):
     path_name: str = "base"
 
     @abstractmethod
-    def retrieve(self, query: str) -> dict:
+    def retrieve(self, query: str, user: dict = None) -> dict:
         """返回 {"context": str, "raw": ..., "meta": {...}}.
 
+        user: 当前用户 dict (含 id, username, dept_id, role), 用于行级权限.
         context: 拼装好给 LLM 的文本上下文
         raw: 原始检索结果 (供前端展示)
         meta: 元信息 (来源、命中数等)

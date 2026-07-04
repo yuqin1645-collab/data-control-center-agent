@@ -1,7 +1,7 @@
 """SQL 执行器: 执行 + 行级权限注入."""
 import sqlite3
 import sqlparse
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 
 class SQLExecutor:
@@ -34,26 +34,41 @@ class SQLExecutor:
         except Exception as e:
             return False, f"语法错误: {e}"
 
-    def inject_permission(self, sql: str, dept_filter: Optional[str] = None) -> str:
-        """行级权限: 在 WHERE 注入部门过滤. 演示版, 生产用 AST 改写更稳."""
-        if not dept_filter:
+    def inject_permission(self, sql: str, user: Optional[Dict] = None) -> str:
+        """行级权限: 在 WHERE 注入部门过滤.
+
+        user: {"dept_id": "SALES", "role": "manager", ...}
+        admin 角色: 不注入 (全量访问)
+        manager/analyst: 注入 WHERE dept_id = '{dept_id}'
+        """
+        if not user:
             return sql
+        role = user.get("role", "")
+        if role == "admin":
+            return sql  # 管理员不过滤
+        dept_id = user.get("dept_id")
+        if not dept_id:
+            return sql
+
         if "WHERE" in sql.upper():
             # 简单拼到现有 WHERE 后
             idx = sql.upper().find("WHERE") + 6
-            return sql[:idx] + f" dept_id = '{dept_filter}' AND" + sql[idx:]
+            return sql[:idx] + f" dept_id = '{dept_id}' AND" + sql[idx:]
         if "GROUP BY" in sql.upper():
-            return sql.replace("GROUP BY", f"WHERE dept_id = '{dept_filter}' GROUP BY", 1)
+            return sql.replace("GROUP BY", f"WHERE dept_id = '{dept_id}' GROUP BY", 1)
         if "ORDER BY" in sql.upper():
-            return sql.replace("ORDER BY", f"WHERE dept_id = '{dept_filter}' ORDER BY", 1)
-        return sql + f" WHERE dept_id = '{dept_filter}'"
+            return sql.replace("ORDER BY", f"WHERE dept_id = '{dept_id}' ORDER BY", 1)
+        return sql + f" WHERE dept_id = '{dept_id}'"
 
-    def execute(self, sql: str, dept_filter: Optional[str] = None) -> dict:
-        """执行 SQL, 返回 {"columns":..., "rows":..., "error":...}."""
+    def execute(self, sql: str, user: Optional[Dict] = None) -> dict:
+        """执行 SQL, 返回 {"columns":..., "rows":..., "error":...}.
+
+        user: 当前用户 dict, 用于行级权限注入.
+        """
         ok, msg = self.validate(sql)
         if not ok:
             return {"columns": [], "rows": [], "error": msg}
-        sql = self.inject_permission(sql, dept_filter)
+        sql = self.inject_permission(sql, user)
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()

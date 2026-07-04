@@ -31,7 +31,7 @@ class WikiRAGRetriever(BaseRetriever):
             pass
         wikipedia.set_lang(lang)
 
-    def retrieve(self, query: str) -> dict:
+    def retrieve(self, query: str, user: dict = None) -> dict:
         # 1. 搜索相关条目
         try:
             titles = wikipedia.search(query, results=self.max_results)

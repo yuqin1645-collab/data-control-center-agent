@@ -3,6 +3,7 @@
 流程: 问题 + schema -> LLM 生成 SQL -> 语法校验 -> 字段校验 -> 执行
        -> 失败则错误回传 LLM 重试, 最多 max_retries 次
 """
+import time
 import yaml
 from core.llm import LLMClient
 from retrieval.text_to_sql.schema_kb import SchemaKB
@@ -31,6 +32,9 @@ def _format_schema_for_prompt(tables: list) -> str:
 
 class SQLGenerator:
     """Text-to-SQL 生成器, 带自纠错."""
+
+    # SQL 生成用快速模型 (翻译任务, qwen-turbo 足够且快3倍)
+    SQL_MODEL = "qwen-turbo"
 
     def __init__(self):
         self.llm = LLMClient.get()
@@ -65,7 +69,7 @@ class SQLGenerator:
 3. 用 SQLite 方言
 4. 只读 SELECT, 禁止 DROP/DELETE/UPDATE"""
         messages = [{"role": "user", "content": prompt}]
-        sql = self.llm.chat(messages, temperature=0.0, max_tokens=512)
+        sql = self.llm.chat(messages, temperature=0.0, max_tokens=512, model=self.SQL_MODEL)
         # 去掉 markdown 代码块
         sql = sql.strip()
         if sql.startswith("```"):
@@ -75,10 +79,15 @@ class SQLGenerator:
             sql = sql.strip()
         return sql
 
-    def generate_and_execute(self, query: str) -> dict:
-        """完整链路: schema 检索 -> 生成 -> 校验 -> 执行 -> 自纠错."""
+    def generate_and_execute(self, query: str, user: dict = None) -> dict:
+        """完整链路: schema 检索 -> 生成 -> 校验 -> 执行 -> 自纠错.
+
+        user: 当前用户 dict, 用于行级权限注入.
+        """
+        t0 = time.time()
         # 1. 检索相关 schema
         tables = self.schema_kb.retrieve(query)
+        print(f"[SQL] schema检索耗时 {round(time.time()-t0,2)}s, 命中{len(tables)}表")
         if not tables:
             return {"sql": None, "result": None, "error": "无可用 schema", "tables": []}
         schema_text = _format_schema_for_prompt(tables)
@@ -87,10 +96,15 @@ class SQLGenerator:
         sql = None
         error = None
         for attempt in range(self.max_retries):
+            t_gen = time.time()
             sql = self._generate_sql(query, schema_text, error=error, prev_sql=sql)
-            # 3. 校验 + 执行
-            res = self.executor.execute(sql)
+            print(f"[SQL] 第{attempt+1}次SQL生成耗时 {round(time.time()-t_gen,2)}s: {sql[:80]}")
+            # 3. 校验 + 执行 (带行级权限)
+            t_exec = time.time()
+            res = self.executor.execute(sql, user=user)
+            print(f"[SQL] SQL执行耗时 {round(time.time()-t_exec,2)}s, error={res['error']}")
             if res["error"] is None:
+                print(f"[SQL] 总耗时 {round(time.time()-t0,2)}s (尝试{attempt+1}次)")
                 return {
                     "sql": sql,
                     "result": res,
@@ -99,7 +113,7 @@ class SQLGenerator:
                     "attempts": attempt + 1,
                 }
             error = res["error"]
-        # 全部失败
+        print(f"[SQL] 总耗时 {round(time.time()-t0,2)}s (全部失败, 尝试{self.max_retries}次)")
         return {
             "sql": sql,
             "result": None,

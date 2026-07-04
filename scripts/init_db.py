@@ -1,4 +1,5 @@
 """初始化样本 SQLite 数据库: 销售 + HR 表.
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 造测试数据, 让 Text-to-SQL 和 SAG 路径能跑通.
 """

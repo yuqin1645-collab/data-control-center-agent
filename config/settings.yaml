@@ -4,6 +4,18 @@ llm:
   max_tokens: 2048
   timeout: 30
 
+# 认证
+auth:
+  # JWT 过期时间 (小时)
+  jwt_expire_hours: 24
+  # 认证数据库路径
+  db_path: "data/agent_auth.db"
+  # 允许的角色
+  roles:
+    - admin      # 全部门访问, 可管理用户
+    - manager    # 本部门数据访问
+    - analyst    # 本部门只读
+
 router:
   # 意图路由的 few-shot 示例数
   few_shot_examples: 3
@@ -26,7 +38,7 @@ text_to_sql:
   # schema 检索 top-k 表
   schema_top_k: 5
   # 自纠错最大重试次数
-  max_retries: 3
+  max_retries: 2
 
 traditional_rag:
   chunk_size: 400

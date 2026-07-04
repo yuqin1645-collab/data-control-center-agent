@@ -1,9 +1,4 @@
-"""缓存层: Redis 结果缓存 + 语义去重.
-
-- 查询结果按 key embedding 缓存
-- 新查询来了先 embedding 检索相似历史问题, 相似度 > 阈值直接返回缓存
-- 无 Redis 时降级为内存缓存
-"""
+"""缓存层: Redis 结果缓存 + 语义去重."""
 import os
 import hashlib
 import json
@@ -19,12 +14,11 @@ except ImportError:
 
 
 class EmbeddingCache:
-    """缓存问题 embedding 用于语义去重."""
     _instance = None
 
     def __init__(self):
         self.redis_url = os.getenv("REDIS_URL", "")
-        self._mem = {}  # 降级内存缓存: {key: (embedding, value, ts)}
+        self._mem = {}
         self.threshold = 0.92
         self.ttl = 3600
         self._r = None
@@ -36,13 +30,12 @@ class EmbeddingCache:
                 self._r = None
 
     @classmethod
-    def get(cls):
+    def get_instance(cls):
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
 
     def _embed(self, text: str) -> np.ndarray:
-        # 延迟导入避免循环依赖
         from retrieval.traditional_rag.indexer import get_embedder
         emb = get_embedder().encode([text], normalize=True)[0]
         return np.asarray(emb, dtype=np.float32)
@@ -53,16 +46,17 @@ class EmbeddingCache:
     def get(self, query: str):
         """语义查找缓存. 命中返回 (result, True), 未命中返回 (None, False)."""
         q_emb = self._embed(query)
-        # 内存模式遍历
         if self._r is None:
             now = time.time()
             for k, (emb, val, ts) in self._mem.items():
                 if now - ts > self.ttl:
                     continue
+                # emb 可能是 bytes (旧格式) 或 ndarray (新格式)
+                if isinstance(emb, bytes):
+                    emb = np.frombuffer(emb, dtype=np.float32)
                 if self._cosine(q_emb, emb) >= self.threshold:
                     return val, True
             return None, False
-        # redis 模式: 遍历 keys (量小可接受)
         now = time.time()
         for k in self._r.scan_iter(match="dcca:q:*"):
             data = self._r.get(k)
@@ -85,8 +79,8 @@ class EmbeddingCache:
         ts = time.time()
         if self._r is None:
             key = hashlib.md5(query.encode()).hexdigest()
-            self._mem[key] = (q_emb.tobytes(), json.dumps(result, ensure_ascii=False), ts)
-            # 内存模式做简单 LRU
+            # 直接存 ndarray, 避免 bytes 转换问题
+            self._mem[key] = (q_emb, json.dumps(result, ensure_ascii=False), ts)
             if len(self._mem) > 500:
                 oldest = min(self._mem, key=lambda k: self._mem[k][2])
                 del self._mem[oldest]

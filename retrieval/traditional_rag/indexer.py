@@ -1,25 +1,80 @@
 """共享 embedder + 文档索引.
 
 get_embedder() 是全局单例, core/cache 和各 retriever 都用这个.
+优先用 sentence-transformers (bge-m3), 不可用时降级到 hash embedder.
 """
 import os
+import hashlib
 from typing import List
 import numpy as np
 
 _EMBEDDER = None
 
+# 降级 embedder 的向量维度 (和 bge-m3 一致, 方便切换)
+FALLBACK_DIM = 768
 
-class Embedder:
-    """sentence-transformers 封装."""
 
-    def __init__(self, model_name: str = None):
-        from sentence_transformers import SentenceTransformer
-        self.model_name = model_name or os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
-        self._model = SentenceTransformer(self.model_name)
+class HashEmbedder:
+    """轻量级 hash embedder: 字符 n-gram hashing → 固定维度向量.
+
+    不需要 torch/sentence-transformers, 适合 demo 和 CI.
+    效果不如 bge-m3 但 cosine 相似度可用.
+    """
+
+    def __init__(self, dim: int = FALLBACK_DIM):
+        self.dim = dim
+
+    def _text_to_ngrams(self, text: str) -> list:
+        """提取字符 2-gram + 词级特征."""
+        text = text.lower().strip()
+        # 字符 2-gram (适合中文)
+        chars = list(text.replace(" ", ""))
+        char_grams = ["".join(chars[i:i + 2]) for i in range(len(chars) - 1)]
+        # 词级 (按空格/标点分)
+        words = []
+        for sep in [" ", "\n", "\t", "，", "。", "、", "；", "？", "！"]:
+            text = text.replace(sep, " ")
+        words = [w for w in text.split() if w]
+        return char_grams + words
 
     def encode(self, texts: List[str], normalize: bool = True) -> np.ndarray:
-        embs = self._model.encode(texts, normalize_embeddings=normalize, show_progress_bar=False)
-        return np.asarray(embs, dtype=np.float32)
+        embs = np.zeros((len(texts), self.dim), dtype=np.float32)
+        for i, text in enumerate(texts):
+            grams = self._text_to_ngrams(text)
+            for g in grams:
+                # hash 到 [0, dim)
+                h = int(hashlib.md5(g.encode()).hexdigest(), 16) % self.dim
+                embs[i, h] += 1.0
+        # L2 normalize
+        if normalize:
+            norms = np.linalg.norm(embs, axis=1, keepdims=True)
+            norms[norms == 0] = 1.0
+            embs = embs / norms
+        return embs
+
+    def encode_one(self, text: str, normalize: bool = True) -> np.ndarray:
+        return self.encode([text], normalize=normalize)[0]
+
+
+class Embedder:
+    """sentence-transformers 封装, 降级到 HashEmbedder."""
+
+    def __init__(self, model_name: str = None):
+        self.model_name = model_name or os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
+        self._model = None
+        self._fallback = None
+        try:
+            from sentence_transformers import SentenceTransformer
+            self._model = SentenceTransformer(self.model_name)
+        except Exception:
+            print(f"[Embedder] sentence-transformers 不可用, 降级到 HashEmbedder (dim={FALLBACK_DIM})")
+            self._fallback = HashEmbedder(FALLBACK_DIM)
+
+    def encode(self, texts: List[str], normalize: bool = True) -> np.ndarray:
+        if self._model:
+            embs = self._model.encode(texts, normalize_embeddings=normalize, show_progress_bar=False)
+            return np.asarray(embs, dtype=np.float32)
+        return self._fallback.encode(texts, normalize=normalize)
 
     def encode_one(self, text: str, normalize: bool = True) -> np.ndarray:
         return self.encode([text], normalize=normalize)[0]

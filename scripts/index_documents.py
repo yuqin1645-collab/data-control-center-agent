@@ -1,4 +1,5 @@
 """创建样本文档并索引到 Chroma (传统 RAG 路径用)."""
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import os
 
 DOC_DIR = "data/documents"

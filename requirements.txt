@@ -34,3 +34,14 @@ pypdf>=4.0.0
 
 # 评估
 scikit-learn>=1.4.0
+
+# API 后端
+fastapi>=0.109.0
+uvicorn>=0.27.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.9
+
+# RAGAS 评估
+ragas>=0.1.9
+datasets>=2.16.0

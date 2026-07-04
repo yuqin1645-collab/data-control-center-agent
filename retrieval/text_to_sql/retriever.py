@@ -9,8 +9,8 @@ class TextToSQLRetriever(BaseRetriever):
     def __init__(self):
         self.gen = SQLGenerator()
 
-    def retrieve(self, query: str) -> dict:
-        out = self.gen.generate_and_execute(query)
+    def retrieve(self, query: str, user: dict = None) -> dict:
+        out = self.gen.generate_and_execute(query, user=user)
         if out["error"]:
             return {
                 "context": f"(SQL 生成失败: {out['error']})",

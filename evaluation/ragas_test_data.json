@@ -1,0 +1,122 @@
+[
+  {
+    "path": "text_to_sql",
+    "question": "销售额排名前5的产品",
+    "reference_answer": "销售额排名前5的产品是：产品1、产品2、产品3、产品4、产品5（具体金额取决于数据库数据）",
+    "reference_context": "products表：product_id, product_name, category, price；orders表：order_id, customer_id, product_id, amount, quantity"
+  },
+  {
+    "path": "text_to_sql",
+    "question": "每个地区的客户数量",
+    "reference_answer": "按地区统计客户数量，华东、华南、华北、西南、西北各有若干客户",
+    "reference_context": "customers表：customer_id, customer_name, region, level"
+  },
+  {
+    "path": "text_to_sql",
+    "question": "订单状态分布",
+    "reference_answer": "订单状态包括已完成、退货、处理中、已取消，各状态有不同数量",
+    "reference_context": "orders表：order_id, status, amount"
+  },
+  {
+    "path": "text_to_sql",
+    "question": "平均薪资最高的部门",
+    "reference_answer": "按部门分组计算平均薪资(base_salary+bonus)，最高的部门名称",
+    "reference_context": "employees表：employee_id, dept_id；salaries表：employee_id, base_salary, bonus"
+  },
+  {
+    "path": "traditional_rag",
+    "question": "员工报销流程是什么",
+    "reference_answer": "员工报销流程包括填写报销单、提交审批、财务审核、打款等步骤",
+    "reference_context": "报销流程文档：包含报销申请、审批流程、财务审核等内容"
+  },
+  {
+    "path": "traditional_rag",
+    "question": "请假需要提前多久申请",
+    "reference_answer": "根据员工手册，请假需要提前一定时间申请，不同类型假期有不同要求",
+    "reference_context": "员工手册文档：包含请假制度、假期类型、申请流程"
+  },
+  {
+    "path": "traditional_rag",
+    "question": "公司有哪些产品",
+    "reference_answer": "公司有多个产品线，涵盖不同类别",
+    "reference_context": "产品介绍文档：包含产品名称、类别、特点"
+  },
+  {
+    "path": "traditional_rag",
+    "question": "新员工入职流程",
+    "reference_answer": "新员工入职需要办理入职手续、领取设备、参加培训等",
+    "reference_context": "员工手册文档：包含入职流程、培训安排"
+  },
+  {
+    "path": "graph_rag",
+    "question": "张三和李四有什么关系",
+    "reference_answer": "张三和李四通过某种关系（如同事、上下级、合作关系）关联",
+    "reference_context": "知识图谱：张三--同事-->李四 或 张三--上下级-->李四"
+  },
+  {
+    "path": "graph_rag",
+    "question": "产品P001和客户C001的关系",
+    "reference_answer": "产品P001和客户C001通过订单关联，客户C001购买了产品P001",
+    "reference_context": "知识图谱：产品P001--被购买-->客户C001 或类似关系"
+  },
+  {
+    "path": "graph_rag",
+    "question": "技术部有哪些员工",
+    "reference_answer": "技术部有多名员工，包括经理、主管、专员等",
+    "reference_context": "知识图谱：员工--属于-->技术部"
+  },
+  {
+    "path": "graph_rag",
+    "question": "销售部和客服部有什么关联",
+    "reference_answer": "销售部和客服部通过业务流程或共同客户关联",
+    "reference_context": "知识图谱：销售部--协作-->客服部 或类似关系"
+  },
+  {
+    "path": "wiki_rag",
+    "question": "什么是机器学习",
+    "reference_answer": "机器学习是人工智能的一个分支，通过算法让计算机从数据中学习模式并做出预测",
+    "reference_context": "Wikipedia：机器学习是研究计算机如何模拟人类学习行为的学科"
+  },
+  {
+    "path": "wiki_rag",
+    "question": "什么是深度学习",
+    "reference_answer": "深度学习是机器学习的一个分支，基于人工神经网络，使用多层网络结构学习数据特征",
+    "reference_context": "Wikipedia：深度学习是基于人工神经网络的机器学习方法"
+  },
+  {
+    "path": "wiki_rag",
+    "question": "什么是自然语言处理",
+    "reference_answer": "自然语言处理是人工智能和语言学的交叉领域，研究计算机如何理解、处理和生成人类语言",
+    "reference_context": "Wikipedia：自然语言处理(NLP)是计算机科学和语言学的交叉领域"
+  },
+  {
+    "path": "wiki_rag",
+    "question": "什么是知识图谱",
+    "reference_answer": "知识图谱是一种结构化的知识表示方式，用图结构描述实体和实体间的关系",
+    "reference_context": "Wikipedia：知识图谱是用于表示现实世界实体及其关系的知识库"
+  },
+  {
+    "path": "sag",
+    "question": "客户C001买了什么产品以及相关产品",
+    "reference_answer": "客户C001购买了若干产品，通过超图关联扩展，还可以发现与这些产品相关的其他产品和客户",
+    "reference_context": "SQL结果：客户C001的订单中的产品列表；超图扩展：同类产品、共同购买的其他客户"
+  },
+  {
+    "path": "sag",
+    "question": "产品P001被哪些客户购买以及这些客户还买了什么",
+    "reference_answer": "产品P001被若干客户购买，通过超图扩展，这些客户还购买了其他相关产品",
+    "reference_context": "SQL结果：购买P001的客户列表；超图扩展：这些客户的其他购买记录"
+  },
+  {
+    "path": "sag",
+    "question": "华东区的订单关联了哪些产品",
+    "reference_answer": "华东区订单包含多种产品，通过超图扩展可发现关联产品和客户",
+    "reference_context": "SQL结果：华东区订单的产品列表；超图扩展：关联产品"
+  },
+  {
+    "path": "sag",
+    "question": "VIP客户购买的产品有哪些关联",
+    "reference_answer": "VIP客户购买了多种产品，通过超图扩展发现这些产品之间的关联和共同购买模式",
+    "reference_context": "SQL结果：VIP客户购买的产品；超图扩展：产品关联关系"
+  }
+]

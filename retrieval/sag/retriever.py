@@ -23,9 +23,9 @@ class SAGRetriever(BaseRetriever):
         self.expand_hops = CFG["expand_hops"]
         self.max_expand = CFG["max_expand_entities"]
 
-    def retrieve(self, query: str) -> dict:
+    def retrieve(self, query: str, user: dict = None) -> dict:
         # 1. SQL 检索基础结果
-        out = self.gen.generate_and_execute(query)
+        out = self.gen.generate_and_execute(query, user=user)
         if out["error"]:
             return {"context": f"(SAG 基础 SQL 失败: {out['error']})",
                     "raw": None, "meta": {"path": self.path_name}}
@@ -62,7 +62,7 @@ class SAGRetriever(BaseRetriever):
         expansion_context = []
         for etype, value in list(expanded)[:self.max_expand]:
             # 简单做: 用该值在所有表查相关行 (演示版, 生产可更智能)
-            extra = self._fetch_related_rows(etype, value)
+            extra = self._fetch_related_rows(etype, value, user=user)
             if extra:
                 expansion_context.append(f"[关联 {etype}={value}]: {extra}")
 
@@ -96,7 +96,7 @@ class SAGRetriever(BaseRetriever):
             },
         }
 
-    def _fetch_related_rows(self, etype: str, value: str) -> str:
+    def _fetch_related_rows(self, etype: str, value: str, user: dict = None) -> str:
         """为扩展实体查相关行. 演示版: 在 sample db 的相关列做精确匹配."""
         # 简单策略: 拼 SELECT * FROM <可能表> WHERE <可能列> = value
         # 生产版应该用 schema_kb 找到正确表和列
@@ -113,7 +113,7 @@ class SAGRetriever(BaseRetriever):
             # 在几个常见表里找
             for tbl in ["orders", "customers", "products", "employees", "salaries"]:
                 sql = f"SELECT * FROM {tbl} WHERE {col} = '{value}' LIMIT 5"
-                r = self.executor.execute(sql)
+                r = self.executor.execute(sql, user=user)
                 if r["rows"]:
                     results.append(f"{tbl}: {r['rows']}")
         return " | ".join(results) if results else ""

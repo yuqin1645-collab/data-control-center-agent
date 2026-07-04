@@ -1,4 +1,5 @@
 """构建样本知识图谱 (GraphRAG 路径用).
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 两种模式:
 1. 从样本文档抽取三元组 (LLM 抽取, 慢但真实)

@@ -32,7 +32,7 @@ class TraditionalRAGRetriever(BaseRetriever):
         self.retrieve_top_k = CFG["retrieve_top_k"]
         self.rerank_top_k = CFG["rerank_top_k"]
 
-    def retrieve(self, query: str) -> dict:
+    def retrieve(self, query: str, user: dict = None) -> dict:
         q_emb = self.embedder.encode_one(query).tolist()
         # 粗排: chroma 向量检索
         try:

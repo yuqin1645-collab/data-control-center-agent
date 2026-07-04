@@ -30,7 +30,7 @@ class GraphRAGRetriever(BaseRetriever):
         self.max_hops = CFG["max_hops"]
         self.max_nodes = CFG["max_nodes"]
 
-    def retrieve(self, query: str) -> dict:
+    def retrieve(self, query: str, user: dict = None) -> dict:
         if self.G.number_of_nodes() == 0:
             return {"context": "(知识图谱为空, 请先运行 scripts/build_graph.py)",
                     "raw": None, "meta": {"path": self.path_name}}

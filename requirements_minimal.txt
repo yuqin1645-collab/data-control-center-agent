@@ -1,0 +1,14 @@
+openai
+tiktoken
+chromadb
+sentence-transformers
+networkx
+sqlparse
+wikipedia
+pyyaml
+python-dotenv
+fastapi
+uvicorn
+python-jose[cryptography]
+bcrypt
+python-multipart

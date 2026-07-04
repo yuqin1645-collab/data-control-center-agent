@@ -1,75 +1,78 @@
-# 快速上手 & 推送 GitHub
+# 数据中控 Agent — 快速启动指南
 
-## 1. 安装依赖
+## 一、环境准备
+
+### Python 后端
 ```bash
 cd data-control-center-agent
 pip install -r requirements.txt
 ```
 
-## 2. 配置 LLM
-```bash
-cp .env.example .env
-# 编辑 .env, 填入:
-# LLM_API_KEY=sk-xxx (DashScope/Deepseek/OpenAI 任一)
-# LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1  (Qwen)
-# LLM_MODEL=qwen2.5-7b-instruct
+### 配置 LLM
+编辑 `.env` 文件，填入你的百炼 API Key：
+```
+LLM_API_KEY=sk-your-actual-key
+LLM_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+LLM_MODEL=qwen-plus
 ```
 
-支持的平台(任选一个,都用 OpenAI 兼容协议):
-
-| 平台 | base_url | model 示例 |
-|------|----------|-----------|
-| 阿里 Qwen DashScope | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen2.5-7b-instruct` |
-| Deepseek | `https://api.deepseek.com/v1` | `deepseek-chat` |
-| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini` |
-| 本地 vLLM | `http://localhost:8000/v1` | `Qwen2.5-7B-Instruct` |
-
-## 3. 初始化样本数据
+### React 前端
 ```bash
-python scripts/init_db.py           # 建 SQLite + schema 知识库
-python scripts/index_documents.py   # 建样本文档 + 索引到 Chroma
-python scripts/build_graph.py       # 建知识图谱 (加 --extract 用 LLM 抽取, 慢)
+cd frontend/react
+npm install
 ```
 
-## 4. 启动
-```bash
-# 命令行测试
-python agent.py "上个月华东区销售额是多少"
+## 二、初始化数据
 
-# Streamlit 前端
-streamlit run frontend/app.py
+```bash
+cd data-control-center-agent
+
+# 1. 创建样本数据库 + Schema 知识库
+PYTHONPATH=. python scripts/init_db.py
+
+# 2. 创建认证数据库 + 预置用户
+PYTHONPATH=. python scripts/init_auth.py
+
+# 3. 索引文档到向量库
+PYTHONPATH=. python scripts/index_documents.py
+
+# 4. 构建知识图谱
+PYTHONPATH=. python scripts/build_graph.py
 ```
 
-## 5. 评估
+## 三、启动服务
+
+### 后端 API
 ```bash
-python evaluation/eval.py --router-only   # 只测路由准确率
-python evaluation/eval.py                  # 全量端到端
+cd data-control-center-agent
+PYTHONPATH=. python -m uvicorn api.main:app --reload --port 8000
 ```
 
-## 6. 推送到 GitHub
+### 前端
 ```bash
-# 6.1 在 GitHub 网页上手动创建空仓库 (不要勾 README/.gitignore/license):
-#     仓库名: data-control-center-agent
+cd frontend/react
+npm run dev
+```
+打开 http://localhost:3000
 
-# 6.2 本地初始化并推送
-git init
-git add .
-git commit -m "feat: 数据中控 Agent - 5路检索 (Text-to-SQL/传统RAG/GraphRAG/Wiki/SAG)"
-git branch -M main
-git remote add origin https://github.com/<你的用户名>/data-control-center-agent.git
-git push -u origin main
+## 四、登录
+
+| 用户名 | 密码 | 角色 | 部门 |
+|--------|------|------|------|
+| admin | admin123 | 管理员 | 全部门 |
+| sales_mgr | sales123 | 经理 | 销售部 |
+| hr_analyst | hr123 | 分析师 | HR部 |
+
+## 五、测试
+
+### 端到端测试
+```bash
+cd data-control-center-agent
+PYTHONPATH=. python -m tests.test_e2e
 ```
 
-## 常见问题
-
-**Q: `sentence-transformers` 下载 bge-m3 模型慢?**
-设镜像: `export HF_ENDPOINT=https://hf-mirror.com` 后重跑。或改 `.env` 的 `EMBEDDING_MODEL=BAAI/bge-small-zh-v1.5`(更小更快)。
-
-**Q: Wikipedia 检索超时?**
-Wiki RAG 路径对网络敏感。可在 `config/settings.yaml` 把 `wiki_rag.max_results` 改小,或路由时少走 wiki。
-
-**Q: 没有 GPU 跑不动?**
-本项目只用 API 调用 LLM,不本地推理,普通笔记本 CPU 即可。embedding 模型本地跑(bge-m3 ~2GB 内存)。
-
-**Q: Chroma 报错?**
-删 `data/chroma/` 目录后重跑 `scripts/init_db.py` 和 `scripts/index_documents.py`。
+### RAGAS 评估
+```bash
+cd data-control-center-agent
+PYTHONPATH=. python evaluation/ragas_eval.py
+```
